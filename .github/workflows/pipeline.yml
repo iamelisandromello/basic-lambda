@@ -48,19 +48,40 @@ jobs:
         run: terraform init
         working-directory: terraform
 
-      # Importar os recursos existentes (Bucket, Função Lambda, IAM Role, Log Group)
-      - name: Import existing resources
+      # Importar os recursos existentes
+      - name: Import existing Lambda function
         run: |
-          terraform import aws_s3_bucket.lambda_code_bucket meu-unico-bucket-s3 || echo "Bucket already imported"
-          terraform import aws_lambda_function.my_lambda_function arn:aws:lambda:us-east-1:${{ secrets.AWS_ACCOUNT_ID }}:function:my_lambda_function || echo "Lambda function already imported"
-          terraform import aws_iam_role.lambda_execution_role arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/lambda_execution_role || echo "IAM Role already imported"
-          terraform import aws_cloudwatch_log_group.lambda_log_group /aws/lambda/my_lambda_function || echo "Log group already imported"
+          terraform import aws_lambda_function.my_lambda_function arn:aws:lambda:us-east-1:${{ secrets.AWS_ACCOUNT_ID }}:function:my_lambda_function || echo "Lambda already managed"
         working-directory: terraform
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
 
-      # Aplicar o Terraform (Somente até o bucket ser criado)
+      - name: Import existing S3 bucket
+        run: |
+          terraform import aws_s3_bucket.lambda_code_bucket meu-unico-bucket-s3 || echo "Bucket already managed"
+        working-directory: terraform
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
+      - name: Import existing IAM role
+        run: |
+          terraform import aws_iam_role.lambda_execution_role lambda_execution_role || echo "IAM Role already managed"
+        working-directory: terraform
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
+      - name: Import existing CloudWatch log group
+        run: |
+          terraform import aws_cloudwatch_log_group.lambda_log_group /aws/lambda/my_lambda_function || echo "Log Group already managed"
+        working-directory: terraform
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
+      # Aplicar o Terraform (somente até o bucket ser criado)
       - name: Terraform Apply (S3 Bucket)
         run: terraform apply -target=aws_s3_bucket.lambda_code_bucket -auto-approve
         working-directory: terraform
@@ -88,7 +109,7 @@ jobs:
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-
+      
       # Obter o nome da função Lambda gerado pelo Terraform
       - name: Get Lambda Function Name
         id: get_lambda_function_name
