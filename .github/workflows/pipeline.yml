@@ -37,7 +37,7 @@ jobs:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
 
-      # Importar bucket existente
+      # Importar o bucket S3 existente
       - name: Import existing S3 bucket
         run: |
           terraform import aws_s3_bucket.lambda_code_bucket meu-unico-bucket-s3 || echo "Bucket already managed by Terraform"
@@ -46,7 +46,7 @@ jobs:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
 
-      # Importar IAM Role existente
+      # Importar a role IAM existente
       - name: Import existing IAM Role
         run: |
           terraform import aws_iam_role.lambda_execution_role lambda_execution_role || echo "Role already managed by Terraform"
@@ -59,6 +59,14 @@ jobs:
       - name: Create Lambda ZIP
         run: zip -r lambda.zip .
 
+      # Aplicar Terraform para garantir que o bucket seja gerenciado
+      - name: Terraform Apply (Bucket e IAM Role)
+        run: terraform apply -target=aws_s3_bucket.lambda_code_bucket -auto-approve
+        working-directory: terraform
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
       # Upload do arquivo ZIP para o S3
       - name: Upload Lambda ZIP to S3
         run: |
@@ -67,7 +75,7 @@ jobs:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
 
-      # Aplicar Terraform
+      # Aplicar Terraform para criar ou atualizar a função Lambda
       - name: Terraform Apply
         run: terraform apply -auto-approve
         working-directory: terraform

@@ -19,6 +19,7 @@ resource "aws_s3_bucket" "lambda_code_bucket" {
 # IAM Role para execução da Lambda
 resource "aws_iam_role" "lambda_execution_role" {
   name = "lambda_execution_role"
+
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
