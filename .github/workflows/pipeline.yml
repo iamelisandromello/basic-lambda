@@ -1,0 +1,95 @@
+name: Deploy Node.js Lambda
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      # Checkout do código
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # Configurar Node.js
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      # Instalar dependências
+      - name: Install dependencies
+        run: npm install
+
+      # Criar o arquivo ZIP para Lambda
+      - name: Create Lambda ZIP
+        run: zip -r lambda.zip src
+
+      # Configurar as credenciais da AWS para o AWS CLI
+      - name: Configure AWS credentials
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        run: |
+          aws configure set aws_access_key_id "$AWS_ACCESS_KEY_ID"
+          aws configure set aws_secret_access_key "$AWS_SECRET_ACCESS_KEY"
+          aws configure set default.region us-east-1
+
+      # Configurar Terraform
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.5.6
+
+      # Inicializar Terraform
+      - name: Terraform Init
+        run: terraform init
+        working-directory: terraform
+
+      # Importar a função Lambda existente (caso ela já exista)
+      - name: Import existing Lambda function
+        run: |
+          terraform import aws_lambda_function.my_lambda_function arn:aws:lambda:us-east-1:${{ secrets.AWS_ACCOUNT_ID }}:function:my_lambda_function || echo "Lambda already managed"
+        working-directory: terraform
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
+      # Aplicar o Terraform (somente até o bucket ser criado)
+      - name: Terraform Apply (S3 Bucket)
+        run: terraform apply -target=aws_s3_bucket.lambda_code_bucket -auto-approve
+        working-directory: terraform
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
+      # Obter o nome do bucket gerado pelo Terraform
+      - name: Get Bucket Name from Terraform
+        id: get_bucket_name
+        run: |
+          BUCKET_NAME=$(terraform output -raw bucket_name)
+          echo "bucket_name=$BUCKET_NAME" >> $GITHUB_ENV
+        working-directory: terraform
+
+      # Upload do arquivo ZIP para o S3
+      - name: Upload Lambda ZIP to S3
+        run: |
+          aws s3 cp lambda.zip s3://${{ env.bucket_name }}/lambda.zip
+
+      # Aplicar o restante do Terraform (função Lambda e outros recursos)
+      - name: Terraform Apply (Remaining Resources)
+        run: terraform apply -auto-approve
+        working-directory: terraform
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
+      # Obter o nome da função Lambda gerado pelo Terraform
+      - name: Get Lambda Function Name
+        id: get_lambda_function_name
+        run: |
+          LAMBDA_FUNCTION_NAME=$(terraform output -raw lambda_function_name)
+          echo "lambda_function_name=$LAMBDA_FUNCTION_NAME" >> $GITHUB_ENV
+        working-directory: terraform
