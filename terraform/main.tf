@@ -15,14 +15,20 @@ provider "aws" {
   region = var.region
 }
 
-# Reutilizando o mesmo bucket S3
+# Reutilizando o Bucket S3 Existente
 resource "aws_s3_bucket" "lambda_code_bucket" {
-  bucket = "meu-unico-bucket-s3"  # Nome fixo para o bucket
+  bucket = "meu-unico-bucket-s3"
+
+  lifecycle {
+    prevent_destroy = true
+  }
 }
 
-# Importar ou reutilizar o papel IAM existente
+# Reutilizando a IAM Role Existente
 resource "aws_iam_role" "lambda_execution_role" {
-  name = "lambda_execution_role"  # Role fixo
+  name = "lambda_execution_role"  # A mesma role que já existe
+
+  # Política de confiança (assume_role_policy)
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
@@ -35,9 +41,14 @@ resource "aws_iam_role" "lambda_execution_role" {
       },
     ]
   })
+
+  lifecycle {
+    prevent_destroy = true
+  }
 }
 
-# Função Lambda com código atualizado (ZIP)
+
+# Reutilizando a Função Lambda Existente
 resource "aws_lambda_function" "my_lambda_function" {
   function_name = "my_lambda_function"  # Nome fixo para a função Lambda
   s3_bucket     = aws_s3_bucket.lambda_code_bucket.bucket
@@ -47,17 +58,15 @@ resource "aws_lambda_function" "my_lambda_function" {
   role          = aws_iam_role.lambda_execution_role.arn
 
   lifecycle {
-    # Evitar recriação da Lambda se o código não mudar
     prevent_destroy = true
   }
 }
 
-# CloudWatch Log Group reutilizado
+# Reutilizando o CloudWatch Log Group Existente
 resource "aws_cloudwatch_log_group" "lambda_log_group" {
   name = "/aws/lambda/my_lambda_function"
 
   lifecycle {
-    # Impedir a destruição do grupo de logs
     prevent_destroy = true
     ignore_changes  = [name]
   }
