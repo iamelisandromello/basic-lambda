@@ -13,12 +13,12 @@ provider "aws" {
 
 # Bucket S3 para armazenamento do código da Lambda
 resource "aws_s3_bucket" "lambda_code_bucket" {
-  bucket = "meu-unico-bucket-s3" # Nome fixo para evitar recriação
+  bucket = "meu-unico-bucket-s3" # Nome fixo para reutilizar o bucket existente
 }
 
 # IAM Role para execução da Lambda
 resource "aws_iam_role" "lambda_execution_role" {
-  name = "lambda_execution_role" # Nome fixo para o papel
+  name = "lambda_execution_role"
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
@@ -35,9 +35,9 @@ resource "aws_iam_role" "lambda_execution_role" {
 
 # Função Lambda
 resource "aws_lambda_function" "my_lambda_function" {
-  function_name = "my_lambda_function" # Nome fixo da função
+  function_name = "my_lambda_function"
   s3_bucket     = aws_s3_bucket.lambda_code_bucket.bucket
-  s3_key        = "lambda.zip" # Caminho fixo do arquivo no bucket
+  s3_key        = "lambda.zip"
   handler       = "src/index.handler"
   runtime       = "nodejs18.x"
   role          = aws_iam_role.lambda_execution_role.arn
