@@ -1,32 +1,23 @@
-terraform {
-  required_providers {
-    aws = {
-      source  = "hashicorp/aws"
-      version = "~> 4.0"
-    }
-    random = {
-      source  = "hashicorp/random"
-      version = "~> 3.0"
-    }
-  }
-}
-
 provider "aws" {
   region = var.region
 }
 
-# Reutilizando o Bucket S3 Existente
+resource "random_id" "lambda_suffix" {
+  byte_length = 4
+}
+
+# Importando o bucket S3 existente
 resource "aws_s3_bucket" "lambda_code_bucket" {
   bucket = "meu-unico-bucket-s3"
-
+  # Impede a recriação do bucket
   lifecycle {
     prevent_destroy = true
   }
 }
 
-# Reutilizando a IAM Role Existente
+# Importando a IAM Role existente
 resource "aws_iam_role" "lambda_execution_role" {
-  name = "lambda_execution_role"  # A mesma role que já existe
+  name = "lambda_execution_role"  # O nome da role que já existe
 
   # Política de confiança (assume_role_policy)
   assume_role_policy = jsonencode({
@@ -47,10 +38,9 @@ resource "aws_iam_role" "lambda_execution_role" {
   }
 }
 
-
-# Reutilizando a Função Lambda Existente
+# Importando a função Lambda existente
 resource "aws_lambda_function" "my_lambda_function" {
-  function_name = "my_lambda_function"  # Nome fixo para a função Lambda
+  function_name = "my_lambda_function"  # A mesma função Lambda existente
   s3_bucket     = aws_s3_bucket.lambda_code_bucket.bucket
   s3_key        = "lambda.zip"
   handler       = "src/index.handler"
@@ -58,16 +48,16 @@ resource "aws_lambda_function" "my_lambda_function" {
   role          = aws_iam_role.lambda_execution_role.arn
 
   lifecycle {
-    prevent_destroy = true
+    prevent_destroy = true  # Impede a destruição acidental da função Lambda
   }
 }
 
-# Reutilizando o CloudWatch Log Group Existente
+# Importando o grupo de logs do CloudWatch existente
 resource "aws_cloudwatch_log_group" "lambda_log_group" {
   name = "/aws/lambda/my_lambda_function"
-
+  
   lifecycle {
-    prevent_destroy = true
-    ignore_changes  = [name]
+    prevent_destroy = true  # Impede a destruição acidental do grupo de logs
   }
 }
+
