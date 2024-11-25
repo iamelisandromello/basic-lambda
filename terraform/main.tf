@@ -40,10 +40,11 @@ resource "aws_lambda_function" "my_lambda_function" {
   handler       = "index.handler"
   timeout       = 15
 
-  lifecycle {
-    prevent_destroy = true
-    ignore_changes = [s3_key] # Ignorar alterações no arquivo ZIP
-  }
+  # Remova ou comente a seção lifecycle para permitir destruição temporária
+  # lifecycle {
+  #  prevent_destroy = true
+  #  ignore_changes = [s3_key] # Ignorar alterações no arquivo ZIP
+  #}
 }
 
 resource "aws_cloudwatch_log_group" "lambda_log_group" {
