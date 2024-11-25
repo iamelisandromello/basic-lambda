@@ -1,25 +1,20 @@
 provider "aws" {
-  region = var.region
+  region = "us-east-1"
 }
 
-resource "random_id" "lambda_suffix" {
-  byte_length = 4
-}
-
-# Importando o bucket S3 existente
+# Importação e gerenciamento do Bucket S3
 resource "aws_s3_bucket" "lambda_code_bucket" {
   bucket = "meu-unico-bucket-s3"
-  # Impede a recriação do bucket
+
   lifecycle {
     prevent_destroy = true
   }
 }
 
-# Importando a IAM Role existente
+# Importação e gerenciamento da IAM Role
 resource "aws_iam_role" "lambda_execution_role" {
-  name = "lambda_execution_role"  # O nome da role que já existe
+  name = "lambda_execution_role"
 
-  # Política de confiança (assume_role_policy)
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
@@ -29,7 +24,7 @@ resource "aws_iam_role" "lambda_execution_role" {
         Principal = {
           Service = "lambda.amazonaws.com"
         }
-      },
+      }
     ]
   })
 
@@ -38,26 +33,27 @@ resource "aws_iam_role" "lambda_execution_role" {
   }
 }
 
-# Importando a função Lambda existente
+# Importação e gerenciamento da Função Lambda
 resource "aws_lambda_function" "my_lambda_function" {
-  function_name = "my_lambda_function"  # A mesma função Lambda existente
-  s3_bucket     = aws_s3_bucket.lambda_code_bucket.bucket
-  s3_key        = "lambda.zip"
-  handler       = "src/index.handler"
-  runtime       = "nodejs18.x"
+  function_name = "my_lambda_function"
   role          = aws_iam_role.lambda_execution_role.arn
+  s3_bucket     = aws_s3_bucket.lambda_code_bucket.id
+  s3_key        = "lambda.zip"
+  runtime       = "nodejs20.x"
+  handler       = "index.handler"
+  timeout       = 15
 
   lifecycle {
-    prevent_destroy = true  # Impede a destruição acidental da função Lambda
+    prevent_destroy = true
   }
 }
 
-# Importando o grupo de logs do CloudWatch existente
+# Importação e gerenciamento do CloudWatch Log Group
 resource "aws_cloudwatch_log_group" "lambda_log_group" {
-  name = "/aws/lambda/my_lambda_function"
-  
+  name              = "/aws/lambda/my_lambda_function"
+  retention_in_days = 14
+
   lifecycle {
-    prevent_destroy = true  # Impede a destruição acidental do grupo de logs
+    prevent_destroy = true
   }
 }
-
