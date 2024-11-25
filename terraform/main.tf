@@ -42,6 +42,11 @@ resource "aws_lambda_function" "my_lambda_function" {
 
   lifecycle {
     prevent_destroy = true
+    ignore_changes  = [
+      # Ignorar mudanças que possam ser feitas fora do Terraform.
+      environment,
+      tags
+    ]
   }
 }
 
