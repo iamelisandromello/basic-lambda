@@ -34,19 +34,15 @@ resource "aws_iam_role" "lambda_execution_role" {
 resource "aws_lambda_function" "my_lambda_function" {
   function_name = "my_lambda_function"
   role          = aws_iam_role.lambda_execution_role.arn
-  s3_bucket     = aws_s3_bucket.lambda_code_bucket.id
-  s3_key        = "lambda.zip"
+  s3_bucket     = aws_s3_bucket.lambda_code_bucket.bucket
+  s3_key        = "lambda.zip" # Deve corresponder ao nome no S3
   runtime       = "nodejs20.x"
   handler       = "index.handler"
   timeout       = 15
 
   lifecycle {
     prevent_destroy = true
-    ignore_changes  = [
-      # Ignorar mudanças que possam ser feitas fora do Terraform.
-      environment,
-      tags
-    ]
+    ignore_changes = [s3_key] # Ignorar alterações no arquivo ZIP
   }
 }
 
