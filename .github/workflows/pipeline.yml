@@ -21,7 +21,7 @@ jobs:
         run: npm install
 
       - name: Create Lambda ZIP
-        run: zip -r lambda.zip .
+        run: zip -r lambda.zip src
 
       - name: Configure AWS credentials
         env:
