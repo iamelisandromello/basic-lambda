@@ -2,7 +2,6 @@ provider "aws" {
   region = "us-east-1"
 }
 
-# Importação e gerenciamento do Bucket S3
 resource "aws_s3_bucket" "lambda_code_bucket" {
   bucket = "meu-unico-bucket-s3"
 
@@ -11,7 +10,6 @@ resource "aws_s3_bucket" "lambda_code_bucket" {
   }
 }
 
-# Importação e gerenciamento da IAM Role
 resource "aws_iam_role" "lambda_execution_role" {
   name = "lambda_execution_role"
 
@@ -33,7 +31,6 @@ resource "aws_iam_role" "lambda_execution_role" {
   }
 }
 
-# Importação e gerenciamento da Função Lambda
 resource "aws_lambda_function" "my_lambda_function" {
   function_name = "my_lambda_function"
   role          = aws_iam_role.lambda_execution_role.arn
@@ -48,7 +45,6 @@ resource "aws_lambda_function" "my_lambda_function" {
   }
 }
 
-# Importação e gerenciamento do CloudWatch Log Group
 resource "aws_cloudwatch_log_group" "lambda_log_group" {
   name              = "/aws/lambda/my_lambda_function"
   retention_in_days = 14
