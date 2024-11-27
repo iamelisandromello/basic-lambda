@@ -29,7 +29,7 @@ resource "aws_lambda_function" "my_lambda_function" {
   s3_bucket     = aws_s3_bucket.lambda_code_bucket.bucket
   s3_key        = "lambda.zip"
   runtime       = "nodejs20.x"
-  handler       = "index.handler"
+  handler       = "src/index.handler"
   timeout       = 15
 
   lifecycle {
