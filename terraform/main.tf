@@ -4,10 +4,6 @@ provider "aws" {
 
 resource "aws_s3_bucket" "lambda_code_bucket" {
   bucket = "meu-unico-bucket-s3"
-
-  lifecycle {
-    prevent_destroy = true
-  }
 }
 
 resource "aws_iam_role" "lambda_execution_role" {
@@ -25,33 +21,24 @@ resource "aws_iam_role" "lambda_execution_role" {
       }
     ]
   })
-
-  lifecycle {
-    prevent_destroy = true
-  }
 }
 
 resource "aws_lambda_function" "my_lambda_function" {
   function_name = "my_lambda_function"
   role          = aws_iam_role.lambda_execution_role.arn
   s3_bucket     = aws_s3_bucket.lambda_code_bucket.bucket
-  s3_key        = "lambda.zip" # Deve corresponder ao nome no S3
+  s3_key        = "lambda.zip"
   runtime       = "nodejs20.x"
   handler       = "index.handler"
   timeout       = 15
 
-  # Remova ou comente a seção lifecycle para permitir destruição temporária
-  #lifecycle {
-  #  prevent_destroy = true
-  #  ignore_changes = [s3_key] # Ignorar alterações no arquivo ZIP
-  #}
+  # `ignore_changes` pode ser usado para evitar que o Terraform force atualizações desnecessárias
+  lifecycle {
+    ignore_changes = [s3_key] # Caso o arquivo ZIP seja atualizado frequentemente
+  }
 }
 
 resource "aws_cloudwatch_log_group" "lambda_log_group" {
   name              = "/aws/lambda/my_lambda_function"
   retention_in_days = 14
-
-  lifecycle {
-    prevent_destroy = true
-  }
 }
