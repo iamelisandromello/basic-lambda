@@ -23,6 +23,13 @@ jobs:
       - name: Create Lambda ZIP
         run: zip -r lambda.zip src
 
+      - name: Upload Lambda ZIP to S3
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        run: |
+          aws s3 cp lambda.zip s3://meu-unico-bucket-s3/lambda.zip
+
       - name: Configure AWS credentials
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
