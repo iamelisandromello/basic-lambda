@@ -32,9 +32,8 @@ resource "aws_lambda_function" "my_lambda_function" {
   handler       = "index.handler"
   timeout       = 15
 
-  # `ignore_changes` pode ser usado para evitar que o Terraform force atualizações desnecessárias
   lifecycle {
-    ignore_changes = [s3_key] # Caso o arquivo ZIP seja atualizado frequentemente
+    ignore_changes = [s3_key]
   }
 }
 
